@@ -42,7 +42,8 @@ def EMA(S,N):             #指数移动平均,为了精度 S>4*N  EMA至少需�
     return pd.Series(S).ewm(span=N, adjust=False).mean().values     
 
 def SMA(S, N, M=1):        #中国式的SMA,至少需要120周期才精确 (雪球180周期)    alpha=1/(1+com)
-    return pd.Series(S).ewm(com=N-M, adjust=True).mean().values     
+    com=(N/M)-1 
+    return pd.Series(S).ewm(com=com, adjust=True).mean().values     
 
 def AVEDEV(S,N):           #平均绝对偏差  (序列与其平均值的绝对差的平均值)   
     avedev=pd.Series(S).rolling(N).apply(lambda x: (np.abs(x - x.mean())).mean())    
@@ -82,8 +83,28 @@ def CROSS(S1,S2):                      #判断穿越 CROSS(MA(C,5),MA(C,10))
     CROSS_BOOL=IF(S1>S2, True ,False)   
     return COUNT(CROSS_BOOL>0,2)==1    #上穿：昨天0 今天1   下穿：昨天1 今天0
 
-
-
+def CROSSUP(s1, s2):
+    s1=pd.Series(s1)
+    if type(s2)==int:
+        s2=np.ones(len(s1))*s2
+        s2=pd.Series(s2)
+    else:
+        s2=pd.Series(s2)
+    cond1 = s1 > s2
+    cond2 = s1.shift() <= s2.shift()
+    result = cond1 & cond2
+    return result
+def CROSSDOWN(s1, s2):
+    s1=pd.Series(s1)
+    if type(s2)==int:
+        s2=np.ones(len(s1))*s2
+        s2=pd.Series(s2)
+    else:
+        s2=pd.Series(s2)
+    cond1 = s1 < s2
+    cond2 = s1.shift() >= s2.shift()
+    result = cond1 & cond2
+    return result
 #------------------   2级：技术指标函数(全部通过0级，1级函数实现） ------------------------------
 def MACD(CLOSE,SHORT=12,LONG=26,M=9):            # EMA的关系，S取120日，和雪球小数点2位相同
     DIF = EMA(CLOSE,SHORT)-EMA(CLOSE,LONG);  
